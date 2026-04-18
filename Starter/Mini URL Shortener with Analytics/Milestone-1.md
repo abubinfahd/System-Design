@@ -225,8 +225,6 @@ Edge cases:
 
 ## Step 3: Non-Functional Requirements
 
-> This is WHERE YOU GROW as an engineer.
-
 These define **how well** the system performs.
 
 **1. Latency**
