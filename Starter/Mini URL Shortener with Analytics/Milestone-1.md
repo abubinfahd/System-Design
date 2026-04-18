@@ -2,7 +2,7 @@
 
 ---
 
-## 🤔 Why This Project? 
+## Why This Project? 
 
 This single system touches **almost everything I've learned** — in one place, for real.
 
@@ -19,7 +19,7 @@ This single system touches **almost everything I've learned** — in one place, 
 
 ---
 
-## 💡 Core Idea
+## Core Idea
 
 You build a system where:
 
@@ -50,7 +50,7 @@ This focused system naturally forces you to make decisions around:
 
 ---
 
-## 🗺️ Milestones Overview
+## Milestones Overview
 
 ---
 
@@ -95,18 +95,18 @@ GET /analytics/{short_code}
 
 ---
 
-### Milestone 4 — Database Design ⚠️ Critical Part
+### Milestone 4 — Database Design Critical Part
 
 Indexing strategy — this is where engineers fail.
 
-- With index → O(log N) B+ tree lookup ✅
+- With index → O(log N) B+ tree lookup 
 
 ---
 
 ### Milestone 5 — Short Code Generation
 
-- ❌ Bad: random string → collision risk
-- ✅ Better: Base62 encode ID
+- Bad: random string → collision risk
+- Better: Base62 encode ID
 
 ```
 id = 125 → "cb"
@@ -120,7 +120,7 @@ Build the API endpoints based on the design above.
 
 ---
 
-### Milestone 7 — Redirect Optimization ⚠️ Important
+### Milestone 7 — Redirect Optimization Important
 
 DB hit for every request → bad at scale.
 
@@ -146,17 +146,17 @@ Options: `dict` or `Redis`
 
 ---
 
-## ⚠️ Where Most People Fail
+## Where Most People Fail
 
 | Mistake | What Goes Wrong |
 |---|---|
-| ❌ "Just build API" | No system thinking |
-| ❌ No indexing strategy | You fail DB design |
-| ❌ Ignoring read-heavy nature | Wrong scaling decisions |
+| "Just build API" | No system thinking |
+| No indexing strategy | You fail DB design |
+| Ignoring read-heavy nature | Wrong scaling decisions |
 
 ---
 
-## 🏁 What You Should Feel After This
+## What You Should Feel After This
 
 If done properly, you'll understand:
 
@@ -169,7 +169,7 @@ If done properly, you'll understand:
 
 ---
 
-# 📚 Milestone 1 — Requirements (Done Properly)
+# Milestone 1 — Requirements (Done Properly)
 
 > We're not just listing features — we're defining **system boundaries + constraints**.
 
@@ -244,7 +244,7 @@ These define **how well** the system performs.
 **4. Consistency**
 - URL creation → must be **strongly consistent**
 - Click tracking → can be **eventually consistent**
-- This is a key design tradeoff ⬅️
+- This is a key design tradeoff 
 
 **5. Durability**
 - URLs must never be lost
@@ -280,7 +280,7 @@ You must assume:
 
 ---
 
-# ❓ Q&A — Deep Dives
+# Q&A — Deep Dives
 
 ---
 
@@ -296,7 +296,7 @@ POST /shorten → takes 2 seconds
 
 What happens?
 - User waits a bit… then gets the link
-- Slight annoyance, but acceptable ✅
+- Slight annoyance, but acceptable 
 
 ---
 
@@ -309,7 +309,7 @@ https://short.ly/abc123 → takes 2 seconds
 What happens?
 - Browser hangs
 - User thinks the link is broken
-- User might close the tab ❌
+- User might close the tab 
 
 ---
 
@@ -337,7 +337,7 @@ User creates `short.ly/xyz` and immediately tries to open it.
 If NOT consistent:
 - DB write not committed yet
 - Redirect lookup fails
-- User sees: `404 Not Found` ❌
+- User sees: `404 Not Found` 
 
 **Result:** System is broken.
 
@@ -346,7 +346,7 @@ If NOT consistent:
 **Example 2: Click Tracking (Eventual is OK)**
 
 User clicks a link. We:
-- Redirect immediately ✅
+- Redirect immediately 
 - Log the click later (async)
 
 If delayed:
@@ -458,7 +458,7 @@ Client → FastAPI → Cache (Redis) → DB (fallback)
 ```
 1. Request comes in → /abc123
 2. Check Redis
-   ├── HIT  → return long_url ✅ (FAST)
+   ├── HIT  → return long_url (FAST)
    └── MISS → query DB
                   ↓
               store in Redis
@@ -552,8 +552,7 @@ Postgres                      ← Source of truth
 
 **Baseline Answer:** Redis down → fallback to DB
 
-✔️ Correct  
-❌ Incomplete
+Correct  but incomplete
 
 ---
 
@@ -685,7 +684,7 @@ Idea: Only **one** request fetches from DB. Others wait.
 3. Request C →              waits
    ...
 4. Request A → fetches from DB → stores in Redis → releases lock
-5. All others → read from Redis ✅
+5. All others → read from Redis 
 ```
 
 **Result:** 10,000 requests → **1 DB query** 🎉
@@ -720,3 +719,4 @@ If you know trending URLs or popular links in advance → load them into Redis b
 - https://github.com/karanpratapsingh/system-design
 - https://github.com/donnemartin/system-design-primer
 - https://www.geeksforgeeks.org/system-design/system-design-tutorial/
+- LLM
