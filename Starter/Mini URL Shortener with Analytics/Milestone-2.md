@@ -177,7 +177,7 @@ Each stage adds complexity only when the previous stage shows measurable strain.
 
 ---
 
-## Key Engineering Principles
+## Key Summary
 
 **Estimation before architecture**
 
