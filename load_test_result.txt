@@ -1,0 +1,15 @@
+=======================================
+       URL SHORTENER LOAD TEST         
+=======================================
+Total Requests:      1000
+Concurrent Users:    100
+Total Time Taken:    25.75 seconds
+---------------------------------------
+Successful Requests: 1000 (100.0%)
+Failed Requests:     0
+Requests per Second: 38.84 req/s
+---------------------------------------
+Average Latency:     2315.67 ms
+Minimum Latency:     2030.07 ms
+Maximum Latency:     6701.75 ms
+=======================================
