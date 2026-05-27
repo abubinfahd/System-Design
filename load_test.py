@@ -1,3 +1,5 @@
+import os
+import sqlite3
 import requests
 import concurrent.futures
 import time
@@ -40,6 +42,42 @@ def make_request(short_code):
             "success": False,
             "error": str(e)
         }
+
+def cleanup_db(short_code):
+    """Deletes the test short code and its clicks from the SQLite database."""
+    # The database could be in the root directory (local run) or in data/ (docker run)
+    db_paths = ["shortener.db", "data/shortener.db"]
+    db_path = None
+    for path in db_paths:
+        if os.path.exists(path):
+            db_path = path
+            break
+            
+    if not db_path:
+        print("Warning: Could not find database file for cleanup.")
+        return
+
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        # Get the ID of the URL
+        cursor.execute("SELECT id FROM urls WHERE short_code = ?", (short_code,))
+        row = cursor.fetchone()
+        if row:
+            url_id = row[0]
+            # Delete clicks associated with this URL
+            cursor.execute("DELETE FROM clicks WHERE url_id = ?", (url_id,))
+            # Delete the URL itself
+            cursor.execute("DELETE FROM urls WHERE id = ?", (url_id,))
+            conn.commit()
+            print(f"Cleanup successful: Removed test short_code '{short_code}' and its click records from '{db_path}'.")
+        else:
+            print(f"Warning: Test short_code '{short_code}' not found in database.")
+            
+        conn.close()
+    except Exception as e:
+        print(f"Warning: Failed to cleanup database: {e}")
 
 def run_load_test():
     print(f"Checking if server is running at {BASE_URL}...")
@@ -100,6 +138,9 @@ def run_load_test():
     with open(RESULT_FILE, "w") as f:
         f.write(report)
         print(f"Results saved to -> {RESULT_FILE}")
+
+    # Perform database cleanup to avoid database pollution
+    cleanup_db(short_code)
 
 if __name__ == "__main__":
     run_load_test()

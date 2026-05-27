@@ -174,6 +174,12 @@ In the upcoming milestones, we will address **scalability** and **performance**:
 - Adding a **Redis Cache** to optimize the read-heavy redirect path.
 - Making click-tracking **eventually consistent** (e.g., using background tasks).
 
-## Problem
+## Problem & Resolution (Fixed)
 
-- When I run load_test.py it has updated db automatically. Its not good practice!!!
+- **Problem:** Running the load test (`load_test.py`) populated the development/production database (`shortener.db` or `data/shortener.db`) with dummy URLs and thousands of clicks, which is bad practice and pollutes data.
+- **Resolution:** Updated `load_test.py` with an automatic database cleanup mechanism. After running the load test, the script:
+  1. Identifies the active SQLite database file location (`shortener.db` or `data/shortener.db`).
+  2. Directly connects to the SQLite database.
+  3. Finds the created test short code and deletes all its click records.
+  4. Deletes the test short code itself, leaving the database exactly in its original clean state.
+
