@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # 🔗 Mini URL Shortener with Analytics (Milestone 1)
 
 Welcome to the **Mini URL Shortener** project! This is the first milestone of building a highly scalable, low-latency URL shortener system.
@@ -192,3 +193,7 @@ In the upcoming milestones, we will address **scalability** and **performance**:
   3. Finds the created test short code and deletes all its click records.
   4. Deletes the test short code itself, leaving the database exactly in its original clean state.
 
+=======
+# System-Design
+Deep dives into system design — from database internals to distributed architectures, focusing on building scalable and resilient systems.
+>>>>>>> 62ac2e2c52e219627b6452a13e73db90ffafcd2a
