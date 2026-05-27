@@ -1,5 +1,3 @@
-import os
-import sqlite3
 import requests
 import concurrent.futures
 import time
@@ -44,38 +42,23 @@ def make_request(short_code):
         }
 
 def cleanup_db(short_code):
-    """Deletes the test short code and its clicks from the SQLite database."""
-    # The database could be in the root directory (local run) or in data/ (docker run)
-    db_paths = ["shortener.db", "data/shortener.db"]
-    db_path = None
-    for path in db_paths:
-        if os.path.exists(path):
-            db_path = path
-            break
-            
-    if not db_path:
-        print("Warning: Could not find database file for cleanup.")
-        return
-
+    """Deletes the test short code and its clicks from the database using SQLAlchemy."""
     try:
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
+        from app.db.database import SessionLocal
+        from app.db.models import URL, Click
         
-        # Get the ID of the URL
-        cursor.execute("SELECT id FROM urls WHERE short_code = ?", (short_code,))
-        row = cursor.fetchone()
-        if row:
-            url_id = row[0]
+        db = SessionLocal()
+        db_url = db.query(URL).filter(URL.short_code == short_code).first()
+        if db_url:
             # Delete clicks associated with this URL
-            cursor.execute("DELETE FROM clicks WHERE url_id = ?", (url_id,))
+            db.query(Click).filter(Click.url_id == db_url.id).delete()
             # Delete the URL itself
-            cursor.execute("DELETE FROM urls WHERE id = ?", (url_id,))
-            conn.commit()
-            print(f"Cleanup successful: Removed test short_code '{short_code}' and its click records from '{db_path}'.")
+            db.delete(db_url)
+            db.commit()
+            print(f"Cleanup successful: Removed test short_code '{short_code}' and its click records from the database.")
         else:
             print(f"Warning: Test short_code '{short_code}' not found in database.")
-            
-        conn.close()
+        db.close()
     except Exception as e:
         print(f"Warning: Failed to cleanup database: {e}")
 

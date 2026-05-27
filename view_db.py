@@ -1,44 +1,28 @@
-import sqlite3
-import os
+import sys
+from app.db.database import SessionLocal
+from app.db.models import URL, Click
 
-# Path to the database (adjust if you run via Docker vs locally)
-# If you ran docker, the file is in 'data/shortener.db'
-# If you run locally, it's just 'shortener.db'
-db_path = "shortener.db"
-if not os.path.exists(db_path):
-    db_path = "shortener.db"
-
-if not os.path.exists(db_path):
-    print("Database file not found! Make sure you start the server first so it gets generated.")
-    exit()
-
-# Connect to the SQLite database
-conn = sqlite3.connect(db_path)
-cursor = conn.cursor()
-
-print("--- URLs TABLE ---")
+print("Connecting to the database...")
 try:
-    cursor.execute("SELECT id, short_code, long_url, created_at FROM urls")
-    urls = cursor.fetchall()
+    db = SessionLocal()
+    
+    print("--- URLs TABLE ---")
+    urls = db.query(URL).all()
     if urls:
         for row in urls:
-            print(f"ID: {row[0]} | Code: {row[1]} | Long URL: {row[2]} | Created: {row[3]}")
+            print(f"ID: {row.id} | Code: {row.short_code} | Long URL: {row.long_url} | Created: {row.created_at}")
     else:
         print("No URLs found.")
-except sqlite3.OperationalError:
-    print("Table 'urls' does not exist yet.")
 
-print("\n--- CLICKS TABLE ---")
-try:
-    cursor.execute("SELECT id, url_id, clicked_at FROM clicks")
-    clicks = cursor.fetchall()
+    print("\n--- CLICKS TABLE ---")
+    clicks = db.query(Click).all()
     if clicks:
         for row in clicks:
-            print(f"ID: {row[0]} | URL_ID: {row[1]} | Clicked At: {row[2]}")
+            print(f"ID: {row.id} | URL_ID: {row.url_id} | Clicked At: {row.clicked_at}")
     else:
         print("No clicks found.")
-except sqlite3.OperationalError:
-    print("Table 'clicks' does not exist yet.")
-
-# Always close the connection when done
-conn.close()
+        
+    db.close()
+except Exception as e:
+    print(f"Error reading database: {e}")
+    sys.exit(1)

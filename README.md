@@ -14,7 +14,7 @@ In this first milestone, we have built a **functional** core utilizing a **Clien
 ## Tech Stack
 
 - **Backend Framework:** FastAPI (Python)
-- **Database:** SQLite (Simplifying Milestone 1)
+- **Database:** PostgreSQL (Upgraded in Milestone 2)
 - **ORM:** SQLAlchemy
 - **Validation:** Pydantic
 - **Containerization:** Docker & Docker Compose
@@ -62,7 +62,7 @@ If you have Docker Desktop installed, you can start the entire application with 
 
 3. The API will now be running at `http://localhost:8000`.
 
-*(Note: The SQLite database file will be safely stored in the automatically created `data/` folder on your machine).*
+*(Note: A PostgreSQL container will be spun up automatically. Database files are persisted via Docker named volume `postgres_data`).*
 
 ### Option 2: Running Locally without Docker
 
@@ -75,13 +75,20 @@ If you prefer to run it using standard Python on your machine:
    venv\Scripts\activate  # On Windows
    ```
 
-2. Install the dependencies:
+2. Copy the environment template and set up your PostgreSQL database connection:
+
+   ```bash
+   copy .env.example .env
+   # Open .env and adjust the DATABASE_URL if needed (must point to a running PostgreSQL server)
+   ```
+
+3. Install the dependencies:
 
    ```bash
    pip install -r requirements.txt
    ```
 
-3. Start the server:
+4. Start the server:
 
    ```bash
    uvicorn app.main:app --reload
@@ -90,6 +97,8 @@ If you prefer to run it using standard Python on your machine:
 ---
 
 ## See DB
+
+Make sure the server has run at least once to initialize the tables, then:
 
 ```bash
 python view_db.py
