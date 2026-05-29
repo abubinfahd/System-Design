@@ -3,13 +3,13 @@
 =======================================
 Total Requests:      1000
 Concurrent Users:    100
-Total Time Taken:    22.70 seconds
+Total Time Taken:    23.09 seconds
 ---------------------------------------
 Successful Requests: 1000 (100.0%)
 Failed Requests:     0
-Requests per Second: 44.05 req/s
+Requests per Second: 43.31 req/s
 ---------------------------------------
-Average Latency:     2161.80 ms
-Minimum Latency:     2026.65 ms
-Maximum Latency:     3672.52 ms
+Average Latency:     2194.79 ms
+Minimum Latency:     2035.77 ms
+Maximum Latency:     4040.90 ms
 =======================================

@@ -1,156 +1,154 @@
-<<<<<<< HEAD
-# 🔗 Mini URL Shortener with Analytics (Milestone 1)
+# 🔗 Mini URL Shortener with Analytics (Milestone 3)
 
-Welcome to the **Mini URL Shortener** project! This is the first milestone of building a highly scalable, low-latency URL shortener system.
+Welcome to the **Mini URL Shortener** project! This is the implementation of **Milestone 3: Production-Grade API Design**.
 
-In this first milestone, we have built a **functional** core utilizing a **Client-Server architecture** and a **Stateless** FastAPI application backed by a simple **SQLite Database**.
+This version transitions the codebase to a production-grade service by introducing versioned endpoints, robust request validation, deterministic Base62 encoding, custom aliases, expiration times, thread-safe rate limiting, idempotency key checks, and a standardized global error response format.
 
-## Features implemented in Milestone 1
+## Features & Enhancements
 
-1. **Create Short URL:** Convert a long URL into a random 6-character short code.
-2. **Redirect to Original URL:** Automatically redirect users from `/{short_code}` to the original URL.
-3. **Track Clicks:** Record every time someone uses a short code.
-4. **Get Analytics:** See how many times a particular short link has been clicked.
+1. **Deterministic Short Codes**: Switched from random string generation to auto-incrementing database ID encoded into a Base62 alphanumeric string. This avoids collision checking and extra database lookups under write load.
+2. **Versioned API Endpoints**: Introduced `/v1/` prefix for all operational endpoints (`POST /v1/urls` and `GET /v1/urls/{short_code}/analytics`). Backward-compatible aliases (`POST /shorten` and `GET /analytics/{short_code}`) are retained to prevent breaking legacy client integrations.
+3. **Custom Aliases**: Users can supply a custom string to use as the short code (matching `[a-zA-Z0-9_-]`). Uniqueness checks prevent duplicate aliases.
+4. **URL Expiration**: Optional `expires_at` timestamp. Accessing expired URLs redirects to an HTTP `410 Gone` error page.
+5. **Idempotency Keys**: Accept an optional `Idempotency-Key` header on creation requests. Concurrent retries return the cached response without corrupting data or generating duplicate database rows.
+6. **Rate Limiting**: Thread-safe, sliding-window in-memory rate limiter protecting creation write paths (restricted to 10 requests per minute per IP).
+7. **Globally Structured Errors**: A unified response schema for all application errors:
+   ```json
+   {
+     "error": {
+       "code": "ERROR_CODE",
+       "message": "Human readable description"
+     }
+   }
+   ```
 
 ## Tech Stack
 
 - **Backend Framework:** FastAPI (Python)
-- **Database:** PostgreSQL (Upgraded in Milestone 2)
+- **Database:** PostgreSQL (with SQLite fallback for local verification)
 - **ORM:** SQLAlchemy
-- **Validation:** Pydantic
+- **Validation:** Pydantic v2
 - **Containerization:** Docker & Docker Compose
+- **Rate Limiter:** Custom thread-safe sliding window in-memory implementation
 
 ---
 
 ## Project Structure (Modular Design)
 
-The project is structured in a modular way so it can easily grow in future milestones:
-
 ```text
 url_shortner/
 ├── app/
-│   ├── main.py               # Application entry point
+│   ├── main.py               # Application entry point & exception handlers registration
 │   ├── api/
-│   │   └── routes.py         # API endpoints (/shorten, /{code}, /analytics)
+│   │   └── routes.py         # API endpoints (versioned routes and legacy aliases)
 │   ├── core/
-│   │   └── config.py         # Environment variables and settings
+│   │   ├── config.py         # App configuration & environment variables
+│   │   ├── errors.py         # Custom exceptions & global HTTP error formatting handlers
+│   │   └── rate_limiter.py   # In-memory sliding-window IP rate limiter
 │   ├── db/
 │   │   ├── database.py       # Database connection setup
-│   │   └── models.py         # SQLAlchemy tables (URL, Click)
+│   │   └── models.py         # SQLAlchemy tables (URL, Click, IdempotencyKey)
 │   ├── schemas/
 │   │   └── schemas.py        # Request & Response Pydantic validation
 │   └── services/
-│       └── url_service.py    # Core business logic
-├── Dockerfile                # Instructions to build the Docker image
-├── docker-compose.yml        # Easy way to run the service locally
-└── requirements.txt          # Python dependencies
+│       └── url_service.py    # Core business logic (Base62 encoding & transactional writes)
+├── Dockerfile                # Docker container build script
+├── docker-compose.yml        # Docker compose orchestrator (Web & PostgreSQL containers)
+├── requirements.txt          # Python dependencies
+└── load_test.py              # Performance load test runner
 ```
 
 ---
 
 ## How to Run the Project
 
-### Option 1: Using Docker (Recommended for Beginners)
+### Option 1: Using Docker (Recommended for Production/Local Dev)
 
-If you have Docker Desktop installed, you can start the entire application with one command.
+Start the database and application containers in the background:
 
-1. Open your terminal in the project directory.
-2. Run the following command:
+```bash
+docker-compose up --build
+```
 
-   ```bash
-   docker-compose up --build
-   ```
-
-3. The API will now be running at `http://localhost:8000`.
-
-*(Note: A PostgreSQL container will be spun up automatically. Database files are persisted via Docker named volume `postgres_data`).*
+The API will be available at `http://localhost:8000`.
 
 ### Option 2: Running Locally without Docker
 
-If you prefer to run it using standard Python on your machine:
-
-1. Create a virtual environment and activate it:
-
+1. Create and activate a Python virtual environment:
    ```bash
    python -m venv venv
    venv\Scripts\activate  # On Windows
+   # source venv/bin/activate # On Unix/macOS
    ```
-
-2. Copy the environment template and set up your PostgreSQL database connection:
-
+2. Copy environment settings and configure database connection string:
    ```bash
    copy .env.example .env
-   # Open .env and adjust the DATABASE_URL if needed (must point to a running PostgreSQL server)
+   # Open .env and adjust configurations (DATABASE_URL & BASE_URL)
    ```
-
-3. Install the dependencies:
-
+3. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-
-4. Start the server:
-
+4. Start the development server:
    ```bash
    uvicorn app.main:app --reload
    ```
 
 ---
 
-## See DB
+## Interactive API Documentation
 
-Make sure the server has run at least once to initialize the tables, then:
-
-```bash
-python view_db.py
-```
-
-## API Documentation (How to Test)
-
-FastAPI automatically generates an interactive documentation page.
-Once the server is running, simply go to:
+FastAPI automatically serves interactive Swagger UI documentation at:
 
 👉 **[http://localhost:8000/docs](http://localhost:8000/docs)**
 
-### Endpoints Overview
+---
 
-#### 1. Shorten a URL
+## API Reference
+
+### 1. Create Short URL
 
 - **Method:** `POST`
-- **Path:** `/shorten`
+- **Path:** `/v1/urls` (Legacy alias: `/shorten`)
+- **Headers**: 
+  - `Idempotency-Key`: `uuid` (Optional, prevents duplicate creates on retries)
 - **Body:**
-
   ```json
   {
-    "long_url": "https://www.google.com"
+    "long_url": "https://www.google.com",
+    "custom_alias": "my-google-search",
+    "expires_at": "2026-12-31T23:59:59Z"
+  }
+  ```
+  *(Both `custom_alias` and `expires_at` are optional)*
+- **Response (HTTP 201):**
+  ```json
+  {
+    "short_code": "my-google-search",
+    "short_url": "http://localhost:8000/my-google-search",
+    "created_at": "2026-05-29T11:06:21.257330Z"
   }
   ```
 
-- **Response:**
-
-  ```json
-  {
-    "short_code": "aB3dE5",
-    "long_url": "https://www.google.com/"
-  }
-  ```
-
-#### 2. Test the Redirect
+### 2. Redirect to Original URL (Hot Path)
 
 - **Method:** `GET`
-- **Path:** `/{short_code}` (e.g., `http://localhost:8000/aB3dE5`)
-- **Behavior:** This won't return JSON. It will issue an HTTP 302 redirect and take your browser directly to the `long_url`.
+- **Path:** `/{short_code}` (e.g. `http://localhost:8000/1`)
+- **Behavior:** Performs an HTTP `302 Found` redirection to the original long URL and records a click tracking record.
+- **Failures:**
+  - **HTTP 404 Not Found**: If the short code does not exist.
+  - **HTTP 410 Gone**: If the URL has passed its expiration time.
 
-#### 3. View Analytics
+### 3. View Analytics
 
 - **Method:** `GET`
-- **Path:** `/analytics/{short_code}` (e.g., `/analytics/aB3dE5`)
-- **Response:**
-
+- **Path:** `/v1/urls/{short_code}/analytics` (Legacy alias: `/analytics/{short_code}`)
+- **Response (HTTP 200):**
   ```json
   {
-    "short_code": "aB3dE5",
-    "total_clicks": 1
+    "short_code": "1",
+    "total_clicks": 1000,
+    "created_at": "2026-05-29T11:06:21.257330Z"
   }
   ```
 
@@ -158,42 +156,10 @@ Once the server is running, simply go to:
 
 ## Load Testing
 
-To ensure the system can handle concurrent requests and maintain low latency, a load testing script is included.
+We include a load testing script `load_test.py` to evaluate concurrent redirects and measure average response latency:
 
 ```bash
-# Make sure your server is running, then execute:
 python load_test.py
 ```
 
-The script will automatically:
-
-1. Create a short URL.
-2. Spin up **50 concurrent users**.
-3. Send **500 requests** to the redirect endpoint.
-4. Print latency metrics (min, max, average) and Requests Per Second (Req/s) to the terminal.
-5. Save the final report to `load_test_result.txt` in the root folder.
-
----
-
-## What's Next? (Future Milestones)
-
-In the upcoming milestones, we will address **scalability** and **performance**:
-
-- Migrating to **PostgreSQL**.
-- Implementing **Base62** encoding to prevent collision risks.
-- Adding a **Redis Cache** to optimize the read-heavy redirect path.
-- Making click-tracking **eventually consistent** (e.g., using background tasks).
-
-## Problem & Resolution (Fixed)
-
-- **Problem:** Running the load test (`load_test.py`) populated the development/production database (`shortener.db` or `data/shortener.db`) with dummy URLs and thousands of clicks, which is bad practice and pollutes data.
-- **Resolution:** Updated `load_test.py` with an automatic database cleanup mechanism. After running the load test, the script:
-  1. Identifies the active SQLite database file location (`shortener.db` or `data/shortener.db`).
-  2. Directly connects to the SQLite database.
-  3. Finds the created test short code and deletes all its click records.
-  4. Deletes the test short code itself, leaving the database exactly in its original clean state.
-
-=======
-# System-Design
-Deep dives into system design — from database internals to distributed architectures, focusing on building scalable and resilient systems.
->>>>>>> 62ac2e2c52e219627b6452a13e73db90ffafcd2a
+The script prints the benchmark metrics to the terminal and records results in `load_test_result.txt` before performing clean-up database tasks.
