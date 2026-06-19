@@ -1,0 +1,22 @@
+ Milestone 3 — Security Hardening
+Blocked dangerous URL schemes (javascript:, data:, ftp:, file:, vbscript:)
+Added suspicious domain warning logging
+
+ Milestone 4 — Database Design
+BigInteger types for future-proof IDs
+click_events table (no FK = zero lock contention on hot path)
+click_count pre-computed column on urls
+Background aggregation job every 60 seconds
+Proper indexes on click_events
+
+ Milestone 5 — Redis Caching
+Full cache-aside pattern: L1 (in-process dict, 60s) → L2 (Redis, 24h) → Postgres
+Stampede protection via distributed lock
+Graceful degradation when Redis is down
+Cache invalidation on updates
+
+ Milestone 6 — Scaling Strategy
+Gunicorn with 4 Uvicorn workers
+Redis-based rate limiting (works across workers)
+/health endpoint for load balancers
+Docker healthchecks for all services
