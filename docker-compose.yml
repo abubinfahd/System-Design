@@ -13,6 +13,25 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: shortener_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   web:
     build: .
@@ -23,8 +42,24 @@ services:
       - .:/app
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/shortener
+      - REDIS_URL=redis://redis:6379/0
+      - BASE_URL=http://localhost:8000
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+    # Scaling: To run multiple API instances behind a load balancer:
+    # docker-compose up --scale web=4
+    # Each instance is stateless — any request can go to any instance.
 
 volumes:
   postgres_data:
+  redis_data:

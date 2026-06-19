@@ -8,6 +8,9 @@ class URLCreate(BaseModel):
     custom_alias: str | None = None
     expires_at: datetime | None = None
 
+    # Dangerous schemes that must be blocked for security
+    BLOCKED_SCHEMES = {"javascript", "data", "ftp", "file", "vbscript"}
+
     @field_validator("long_url")
     @classmethod
     def validate_long_url(cls, v: str) -> str:
@@ -15,6 +18,13 @@ class URLCreate(BaseModel):
             raise ValueError("URL must not exceed 2048 characters")
         try:
             parsed = urlparse(v)
+
+            # Block dangerous schemes (XSS, data exfiltration, local file access)
+            if parsed.scheme.lower() in cls.BLOCKED_SCHEMES:
+                raise ValueError(
+                    f"URL scheme '{parsed.scheme}' is not allowed. Only http and https are accepted."
+                )
+
             if parsed.scheme not in ("http", "https"):
                 raise ValueError("URL must have a valid scheme (http or https)")
             if not parsed.netloc:
